@@ -1,20 +1,17 @@
 # encoding: UTF-8
 
-#FIXME: still mostly Templater
 module Merb::Generators
 
+  #TODO: This is a no-op!
   class Migration < Generator
 
-    def self.source_root
-      File.join(super, 'component', 'migration')
-    end
+    include AppGeneratorHelpers
 
-    desc <<-DESC
-      Generates a new database migration.
-    DESC
+    source_root(template_base('component/migration'))
 
-    class_option :orm,
-      :desc => 'Object-Relation Mapper to use (one of: none, activerecord, datamapper, sequel)'
+    desc 'Generate a new database migration.'
+
+    class_option_for :orm
 
     class_option :model,
       :type => :boolean,
@@ -26,6 +23,8 @@ module Merb::Generators
     argument :attributes,
       :type => :hash,
       :default => {}
+
+    protected
 
     def table_name
       self.name.underscore.pluralize
@@ -49,8 +48,6 @@ module Merb::Generators
       format("%03d", n)
     end
 
-    protected
-
     def destination_directory
       File.join(destination_root, 'schema', 'migrations')
     end
@@ -62,7 +59,4 @@ module Merb::Generators
     end
 
   end
-
-  #add :migration, MigrationGenerator
-
 end

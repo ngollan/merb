@@ -1,26 +1,15 @@
 # encoding: UTF-8
 
-#FIXME: mostly Templater
 module Merb::Generators
-
   class ResourceController < NamespacedGenerator
 
-    def self.source_root
-      File.join(super, 'component', 'resource_controller')
-    end
+    include AppGeneratorHelpers
 
-    desc <<-DESC
-      Generates a new resource controller.
-    DESC
+    source_root(template_base('component/resource_controller'))
 
-    class_option :testing_framework,
-      :desc => 'Testing framework to use (one of: rspec, test_unit)'
+    desc 'Generate a new resource controller.'
 
-    class_option :orm,
-      :desc => 'Object-Relation Mapper to use (one of: none, activerecord, datamapper, sequel)'
-
-    class_option :template_engine,
-      :desc => 'Template Engine to use (one of: erb, haml, markaby, etc...)'
+    app_class_options
 
     argument :attributes,
       :type => :hash,
@@ -28,46 +17,32 @@ module Merb::Generators
       :desc => "space separated resource model properties in form of name:type. Example: state:string"
 
     def create_resource_controller
-      invoke :helper do |generator|
-        generator.new(destination_root, options, name)
-      end
+      invoke Helper
 
-      # add controller and view templates for each of the four big ORM's
+      case :orm
 
+      when :none
+        directory 'app'
+        directory (testing_framework == :rspec ? "spec" : "test")
 
-      template :controller_none, :orm => :none do |template|
-        template.source = "app/controllers/%file_name%.rb"
-        template.destination = "app/controllers" / base_path / "#{file_name}.rb"
-        self.add_resource_route(self.plural_model) unless skip_route_definition?
-      end
+      end # case ORM
+    end
 
-      [:index, :show, :edit, :new].each do |view|
-        template "view_#{view}_none".to_sym, :template_engine => :erb, :orm => :none do |template|
-          template.source = "app/views/%file_name%/#{view}.html.erb"
-          template.destination = "app/views" / base_path / "#{file_name}/#{view}.html.erb"
+    def add_resource_route
+      unless skip_route_definition?
+        plural_resource = self.plural_model
+        router_path = Merb.root + "/config/router.rb"
+        sentinel = "Merb::Router.prepare do"
+        to_inject = "resources :#{plural_resource}"
+
+        if File.exist?(router_path)
+          content = File.read(router_path).gsub(/(#{Regexp.escape(sentinel)})/mi){|match| "#{match}\n  #{to_inject}"}
+          File.open(router_path, 'wb') { |file| file.write(content) }
         end
       end
-
-      template :request_spec, :testing_framework => :rspec do |template|
-        template.source = 'spec/requests/%file_name%_spec.rb'
-        template.destination = "spec/requests" / base_path / "#{file_name}_spec.rb"
-      end
-
-      template :controller_test_unit, :testing_framework => :test_unit, :orm => :none do |template|
-        template.source = 'test/controllers/%file_name%_test.rb'
-        template.destination = "test/controllers" / base_path / "#{file_name}_test.rb"
-      end
     end
 
-    def add_resource_route(plural_resource)
-      router_path = Merb.root + "/config/router.rb"
-      sentinel = "Merb::Router.prepare do"
-      to_inject = "resources :#{plural_resource}"
-      if File.exist?(router_path)
-        content = File.read(router_path).gsub(/(#{Regexp.escape(sentinel)})/mi){|match| "#{match}\n  #{to_inject}"}
-        File.open(router_path, 'wb') { |file| file.write(content) }
-      end
-    end
+    protected
 
     def model_class_name
       class_name.singularize
@@ -100,7 +75,4 @@ module Merb::Generators
     end
 
   end
-
-  # add :resource_controller, ResourceControllerGenerator
-
 end

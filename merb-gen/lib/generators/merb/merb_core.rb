@@ -3,100 +3,29 @@
 module Merb
   module Generators
     class MerbCoreGenerator < AppGenerator
-      #
-      # ==== Paths
-      #
-      
-      def self.source_root
-        File.join(super, 'application', 'merb_core')
-      end
 
-      def self.common_templates_dir
-        File.expand_path(File.join(File.dirname(__FILE__), '..',
-                                   'templates', 'application', 'common'))
-      end
+      source_paths << template_base('application/merb_very_flat')
 
-      def common_templates_dir
-        self.class.common_templates_dir
-      end
-
-      #
-      # ==== Generator options
-      #
-
-      class_option :testing_framework,
-        :default => :rspec,
-        :desc => 'Testing framework to use (one of: rspec, test_unit).'
-
-      class_option :orm,
-        :default => :none,
-        :desc => 'Object-Relation Mapper to use (one of: none, activerecord, datamapper, sequel).'
-
-      class_option :template_engine,
-        :default => :erb,
-        :desc => 'Template engine to prefer for this application (one of: erb, haml).'
+      app_class_options
 
       desc <<-DESC
       Generates a new Merb application with Ruby on Rails like structure.
       You can specify the ORM and testing framework.
-    DESC
+      DESC
 
-      #TODO: this is just hidden Templater code
       def create_application
         empty_directory :lib_tasks, 'lib/tasks'
 
-        empty_directory :bin, 'bin'
-        template :merb do |template|
-          template.source = File.join(common_templates_dir, "merb")
-          template.destination = "bin/merb"
-        end
+        directory 'app'
+        directory 'autotest'
+        directory 'config'
+        directory 'doc'
+        directory 'public'
+        directory (testing_framework == :rspec ? "spec" : "test")
 
-        template :gemfile do |template|
-          template.source = File.join(common_templates_dir, "Gemfile")
-          template.destination = "Gemfile"
-        end
-
-        template :rakefile do |template|
-          template.source = File.join(common_templates_dir, "Rakefile")
-          template.destination = "Rakefile"
-        end
-
-        file :gitignore do |file|
-          file.source = File.join(common_templates_dir, 'dotgitignore')
-          file.destination = ".gitignore"
-        end
-
-        file :rspec do |file|
-          file.source = File.join(common_templates_dir, 'dotrspec')
-          file.destination = ".rspec"
-        end
-
-        directory :test_dir do |directory|
-          dir    = testing_framework == :rspec ? "spec" : "test"
-
-          directory.source      = File.join(source_root, dir)
-          directory.destination = dir
-        end
-
-        #
-        # ==== Layout specific things
-        #
-
-        # empty array means all files are considered to be just
-        # files, not templates
-        glob! "app"
-        glob! "autotest"
-        glob! "config"
-        glob! "doc",      []
-        glob! "public"      
-
-        invoke :layout do |generator|
-          generator.new(destination_root, options, 'application')
-        end
+        invoke Layout
       end
+
     end
-
-    # add :core, MerbCoreGenerator
-
   end
 end

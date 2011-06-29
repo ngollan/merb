@@ -21,7 +21,7 @@ describe Merb::Generators::MerbStack do
     it_should_behave_like "named generator"
     it_should_behave_like "app generator"
 
-    it "should write to /tmp/testing" do
+    it "should write to the supplied application path" do
       @generator.destination_root.should == app_path
     end
 

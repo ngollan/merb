@@ -1,13 +1,11 @@
 # encoding: UTF-8
 
-#FIXME: mostly Templater
 module Merb::Generators
+  class Resource < Generator
 
-  class ResourceGenerator < Generator
+    include AppGeneratorHelpers
 
-    desc <<-DESC
-      Generates a new resource.
-    DESC
+    desc 'Generate a new resource.'
 
     argument :name,
       :required => true,
@@ -18,21 +16,17 @@ module Merb::Generators
       :default => {},
       :desc => "space separated resource model properties in form of name:type. Example: state:string"
 
-    class_option :testing_framework,
-      :desc => 'Testing framework to use (one of: rspec, test_unit)'
-
-    class_option :orm,
-      :desc => 'Object-Relation Mapper to use (one of: none, activerecord, datamapper, sequel)'
+    class_option_for :testing_framework
+    class_option_for :orm
 
     def create_resource
-      invoke :model do |generator|
-        generator.new(destination_root, options, model_name, attributes)
-      end
+      invoke Model, model_name
+      invoke ResourceController, controller_name
 
-      invoke :resource_controller do |generator|
-        generator.new(destination_root, options, controller_name, attributes)
-      end
+      STDOUT << message("resources :#{model_name.pluralize.underscore} route added to config/router.rb")
     end
+
+    protected
 
     def controller_name
       name.pluralize
@@ -42,10 +36,5 @@ module Merb::Generators
       name
     end
 
-    def after_generation
-      STDOUT << message("resources :#{model_name.pluralize.underscore} route added to config/router.rb")
-    end
   end
-
-  # add :resource, ResourceGenerator
 end

@@ -1,8 +1,8 @@
 # encoding: UTF-8
 
 module Merb::Generators
-
   class Layout < NamedGenerator
+
     include AppGeneratorHelpers
 
     source_root(template_base('component/layout'))
@@ -17,5 +17,4 @@ module Merb::Generators
     end
 
   end
-
 end

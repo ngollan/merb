@@ -1,27 +1,24 @@
 # encoding: UTF-8
 
-#FIXME: mostly Templater
 module Merb::Generators
 
+  #TODO: This is a no-op!
   class SessionMigration < Generator
 
-    def self.source_root
-      File.join(super, 'component', 'session_migration')
-    end
+    include AppGeneratorHelpers
 
-    desc <<-DESC
-      Generates a new session migration.
-    DESC
+    source_root(template_base('component/session_migration'))
 
-    class_option :orm,
-      :desc => 'Object-Relation Mapper to use (one of: none, activerecord, datamapper, sequel)'
+    desc 'Generates a new session migration.'
+
+    class_option_for :orm
+
+    protected
 
     def version
       # TODO: handle ActiveRecord timestamped migrations
       format("%03d", current_migration_nr + 1)
     end
-
-    protected
 
     def destination_directory
       File.join(destination_root, 'schema', 'migrations')
@@ -32,7 +29,4 @@ module Merb::Generators
     end
 
   end
-
-  #add :session_migration, SessionMigrationGenerator
-
 end
