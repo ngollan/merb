@@ -1,7 +1,9 @@
 # encoding: UTF-8
 
+require 'merb-gen/helpers/generator_helpers'
+
 module Merb
-  
+
   module ColorfulMessages
     # red
     def error(*messages)
@@ -20,17 +22,24 @@ module Merb
   end
 
   module Generators
-    
-    extend Templater::Manifold
-    
-    desc <<-DESC
-      Generate components for your application or entirely new applications.
-    DESC
-    
-    class Generator < Templater::Generator
-      
+    class Generator < Thor::Group
       include Merb::ColorfulMessages
-      
+      include Merb::Generators::GeneratorHelpers
+      include Thor::Actions
+
+      desc "Generate components for your application or entirely new applications."
+
+      # Template base path
+      def self.template_base(frag=nil)
+        tb = File.join(File.expand_path('../../generators/templates', __FILE__))
+
+        if frag.nil?
+          tb
+        else
+          File.join(tb, frag)
+        end
+      end
+
       def initialize(*args)
         Merb::Config.setup({
           :log_level        => :fatal,
@@ -43,48 +52,18 @@ module Merb
         Merb::BootLoader::Logger.run
         Merb::BootLoader::BuildFramework.run
         Merb::BootLoader::Dependencies.run
-        
-        super
-        options[:orm] ||= Merb.orm
-        options[:testing_framework] ||= Merb.test_framework
-        options[:template_engine] ||= Merb.template_engine
+
+        _args, _options, _config = args
+
+        _options.merge({:orm => Merb.orm}) if Merb.orm
+        _options.merge({:template_engine => Merb.template_engine}) if Merb.template_engine
+        _options.merge({:testing_framework => Merb.test_framework}) if Merb.test_framework
+
+        super(_args, _options, _config)
       end
 
-      # Inside a template, wraps a block of code properly in modules,
-      # keeping the indentation correct.
-      #
-      # @param [Array<#to_s>] modules Array of modules to use for nesting.
-      # @param [Hash] options Additional options.
-      # @option options [Integer] indent (0)
-      #   Number of levels to indent the modules.
-      def with_modules(modules, options={}, &block)
-        indent = options[:indent] || 0
-        text = capture(&block)
-        modules.each_with_index do |mod, i|
-          concat(("  " * (indent + i)) + "module #{mod}\n", block.binding)
-        end
-        text = Array(text).map{ |line| ("  " * modules.size) + line }.join
-        concat(text, block.binding)
-        modules.reverse.each_with_index do |mod, i|
-          concat(("  " * (indent + modules.size - i - 1)) + "end # #{mod}\n", block.binding)
-        end
-      end
-
-      # Returns a string of num times `'..'`, useful for example in tests
-      # for namespaced generators to find the `spec_helper` higher up in
-      # the directory structure.
-      #
-      # @param [Integer] num Number of directories up.
-      # @return [String] Concatenated string.
-      def go_up(num)
-        (["'..'"] * num).join(', ')
-      end
-    
-      def self.source_root
-        File.join(File.dirname(__FILE__), '..', 'generators', 'templates')
-      end
     end
-    
-  end  
-  
+
+  end
+
 end

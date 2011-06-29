@@ -11,17 +11,43 @@ require "merb-gen"
 # Satisfies Autotest and anyone else not using the Rake tasks
 require 'rspec'
 
-# Templater spec support
-require 'templater/spec/helpers'
-
 Merb.disable(:initfile)
 
+module Merb
+  module Test
+    module RSpecMatchers
+      class ThorCreateMatcher
+        def initialize(expected)
+          @expected = expected
+        end
+
+        def matches?(actual)
+          @actual = actual
+          @actual.class.all_tasks.select {|t| t.respond_to? :destination}.map {|t| t.destination }.include?(@expected)
+        end
+
+        def failure_message
+          "expected #{@actual.inspect} to create #{@expected.inspect}, but it didn't"
+        end
+
+        def negative_failure_message
+          "expected #{@actual.inspect} not to create #{@expected.inspect}, but it did"
+        end
+      end
+
+      def create(expected)
+        ThorCreateMatcher.new(expected)
+      end
+    end
+  end
+end
+
 RSpec.configure do |config|
-  config.include Templater::Spec::Helpers
+  include Merb::Test::RSpecMatchers
 end
 
 shared_examples_for "app generator" do
-  
+
   describe "#gems_for_orm" do
     [:activerecord, :sequel, :datamapper].each do |orm|
       it "should generate DSL for #{orm} ORM plugin" do

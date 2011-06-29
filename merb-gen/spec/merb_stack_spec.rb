@@ -1,58 +1,52 @@
 require 'spec_helper'
 
-describe Merb::Generators::MerbStackGenerator do
+describe Merb::Generators::MerbStack do
 
   describe "templates" do
 
-    before do
-      @generator = Merb::Generators::MerbStackGenerator.new('/tmp', {}, 'testing')
+    def app_path(*frags)
+      File.join('/tmp', @app_name, *frags)
+    end
+
+    before :all do
+      @app_name = "testing#{Process.pid}"
+      @generator = Merb::Generators::MerbStack.new([@app_name], {}, {:destination_root => app_path})
+    end
+
+    after :all do
+      raise "Not going to remove: #{app_path}" unless app_path.match?(/\A\/tmp\/testing\d+/)
+      FileUtils.rm_r(app_path)
     end
 
     it_should_behave_like "named generator"
     it_should_behave_like "app generator"
 
-    it "should create an Gemfile" do
-      @generator.should create('/tmp/testing/Gemfile')
+    it "should write to /tmp/testing" do
+      @generator.destination_root.should == app_path
     end
 
-    it "should create an bin/merb" do
-      @generator.should create('/tmp/testing/bin/merb')
-    end
-
-    it "should create a passenger config file" do
-      @generator.should create('/tmp/testing/config.ru')
-    end
-
-    it "should create config/init.rb" do
-      @generator.should create('/tmp/testing/config/init.rb')
-    end
-
-    it "should create config/database.yml" do
-      @generator.should create('/tmp/testing/config/database.yml')
-    end
-
-    it "should have an application controller" do
-      @generator.should create('/tmp/testing/app/controllers/application.rb')
-    end
-
-    it "should have an exceptions controller" do
-      @generator.should create('/tmp/testing/app/controllers/exceptions.rb')
-    end
-
-    it "should have a gitignore file" do
-      @generator.should create('/tmp/testing/.gitignore')
-    end
-
-    it "should create a number of views"
-
-    it "should render templates successfully" do
-      lambda do 
-        @generator.render!
+    it "should create the application" do
+      lambda do
+        @generator.invoke_all
       end.should_not raise_error
     end
 
-    it "should create an empty lib/tasks directory" do
-      @generator.should create('/tmp/testing/lib/tasks')
+    describe "File creation" do
+      [
+        'Gemfile', 'bin/merb', 'config.ru', 'config/init.rb',
+        'config/database.yml', 'app/controllers/application.rb',
+        'app/controllers/exceptions.rb', '.gitignore'
+      ].each do |fname|
+        it "should create #{fname}" do
+          File.exist?(app_path(fname)).should be_true
+        end
+      end
+
+      it "should create a number of views"
+
+      it "should create an empty lib/tasks directory" do
+        File.directory?(app_path('lib/tasks')).should be_true
+      end
     end
 
   end

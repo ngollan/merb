@@ -4,10 +4,6 @@ module Merb
   module Generators
 
     class NamespacedGenerator < NamedGenerator
-      # @note Currently this is not inherited, it will have to be declared
-      # in each generator that inherits from this.
-      first_argument :name, :required => true
-
       def modules
         chunks[0..-2]
       end

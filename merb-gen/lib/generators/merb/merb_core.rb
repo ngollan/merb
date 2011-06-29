@@ -16,10 +16,6 @@ module Merb
                                    'templates', 'application', 'common'))
       end
 
-      def destination_root
-        File.join(@destination_root, base_name)
-      end
-
       def common_templates_dir
         self.class.common_templates_dir
       end
@@ -28,77 +24,79 @@ module Merb
       # ==== Generator options
       #
 
-      option :testing_framework, :default => :rspec,
-      :desc => 'Testing framework to use (one of: rspec, test_unit).'
-      option :orm, :default => :none,
-      :desc => 'Object-Relation Mapper to use (one of: none, activerecord, datamapper, sequel).'
-      option :template_engine, :default => :erb,
-      :desc => 'Template engine to prefer for this application (one of: erb, haml).'
+      class_option :testing_framework,
+        :default => :rspec,
+        :desc => 'Testing framework to use (one of: rspec, test_unit).'
+
+      class_option :orm,
+        :default => :none,
+        :desc => 'Object-Relation Mapper to use (one of: none, activerecord, datamapper, sequel).'
+
+      class_option :template_engine,
+        :default => :erb,
+        :desc => 'Template engine to prefer for this application (one of: erb, haml).'
 
       desc <<-DESC
       Generates a new Merb application with Ruby on Rails like structure.
       You can specify the ORM and testing framework.
     DESC
 
-      first_argument :name, :required => true, :desc => "Application name"
+      #TODO: this is just hidden Templater code
+      def create_application
+        empty_directory :lib_tasks, 'lib/tasks'
 
-      #
-      # ==== Common directories & files
-      #
+        empty_directory :bin, 'bin'
+        template :merb do |template|
+          template.source = File.join(common_templates_dir, "merb")
+          template.destination = "bin/merb"
+        end
 
-      empty_directory :lib_tasks, 'lib/tasks'
+        template :gemfile do |template|
+          template.source = File.join(common_templates_dir, "Gemfile")
+          template.destination = "Gemfile"
+        end
 
-      empty_directory :bin, 'bin'
-      template :merb do |template|
-        template.source = File.join(common_templates_dir, "merb")
-        template.destination = "bin/merb"
-      end
+        template :rakefile do |template|
+          template.source = File.join(common_templates_dir, "Rakefile")
+          template.destination = "Rakefile"
+        end
 
-      template :gemfile do |template|
-        template.source = File.join(common_templates_dir, "Gemfile")
-        template.destination = "Gemfile"
-      end
+        file :gitignore do |file|
+          file.source = File.join(common_templates_dir, 'dotgitignore')
+          file.destination = ".gitignore"
+        end
 
-      template :rakefile do |template|
-        template.source = File.join(common_templates_dir, "Rakefile")
-        template.destination = "Rakefile"
-      end
+        file :rspec do |file|
+          file.source = File.join(common_templates_dir, 'dotrspec')
+          file.destination = ".rspec"
+        end
 
-      file :gitignore do |file|
-        file.source = File.join(common_templates_dir, 'dotgitignore')
-        file.destination = ".gitignore"
-      end
+        directory :test_dir do |directory|
+          dir    = testing_framework == :rspec ? "spec" : "test"
 
-      file :rspec do |file|
-        file.source = File.join(common_templates_dir, 'dotrspec')
-        file.destination = ".rspec"
-      end
+          directory.source      = File.join(source_root, dir)
+          directory.destination = dir
+        end
 
-      directory :test_dir do |directory|
-        dir    = testing_framework == :rspec ? "spec" : "test"
+        #
+        # ==== Layout specific things
+        #
 
-        directory.source      = File.join(source_root, dir)
-        directory.destination = dir
-      end
+        # empty array means all files are considered to be just
+        # files, not templates
+        glob! "app"
+        glob! "autotest"
+        glob! "config"
+        glob! "doc",      []
+        glob! "public"      
 
-      #
-      # ==== Layout specific things
-      #
-
-      # empty array means all files are considered to be just
-      # files, not templates
-      glob! "app"
-      glob! "autotest"
-      glob! "config"
-      glob! "doc",      []
-      glob! "public"      
-      
-      invoke :layout do |generator|
-        generator.new(destination_root, options, 'application')
+        invoke :layout do |generator|
+          generator.new(destination_root, options, 'application')
+        end
       end
     end
 
-    add :core, MerbCoreGenerator
+    # add :core, MerbCoreGenerator
 
   end
 end
