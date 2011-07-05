@@ -9,24 +9,20 @@ module Merb::Generators
     # @param [Hash] options Additional options.
     # @option options [Integer] indent (0)
     #   Number of levels to indent the modules.
-    #
-    # @todo Uses Templater::CaptureHelpers, which is a fairly hackish
-    #   thing dabbling with the internals of erb to catch and replace
-    #   generated content based on interpreter state at call time. The
-    #   methods in question are:
-    #
-    #   * concat
-    #   * capture
     def with_modules(modules, options={}, &block)
       indent = options[:indent] || 0
+
       text = capture(&block)
+
       modules.each_with_index do |mod, i|
-        concat(("  " * (indent + i)) + "module #{mod}\n", block.binding)
+        concat ("  " * (indent + i)) + "module #{mod}\n"
       end
+
       text = Array(text).map{ |line| ("  " * modules.size) + line }.join
-      concat(text, block.binding)
+      concat text
+
       modules.reverse.each_with_index do |mod, i|
-        concat(("  " * (indent + modules.size - i - 1)) + "end # #{mod}\n", block.binding)
+        concat ("  " * (indent + modules.size - i - 1)) + "end # #{mod}\n"
       end
     end
 
@@ -52,8 +48,8 @@ module Merb::Generators
       class_name + "Test"
     end
 
-    def file_name
-      name.underscore_preserve('-')
+    def file_name(_name = name)
+      _name.underscore_preserve('-')
     end
 
     alias_method :base_name, :file_name

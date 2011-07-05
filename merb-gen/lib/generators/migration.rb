@@ -2,30 +2,7 @@
 
 module Merb::Generators
 
-  #TODO: This is a no-op!
-  class Migration < Generator
-
-    include AppGeneratorHelpers
-
-    source_root(template_base('component/migration'))
-
-    desc 'Generate a new database migration.'
-
-    class_option_for :orm
-
-    class_option :model,
-      :type => :boolean,
-      :desc => 'Specify this option to generate a migration which creates a table for the provided model'
-
-    argument :name,
-      :required => true
-
-    argument :attributes,
-      :type => :hash,
-      :default => {}
-
-    protected
-
+  module MigrationHelpers
     def table_name
       self.name.underscore.pluralize
     end
@@ -57,6 +34,30 @@ module Merb::Generators
         File.basename(f).match(/^(\d+)/)[0].to_i
       end.max.to_i
     end
+
+  end
+
+  #TODO: This is a no-op!
+  class Migration < Generator
+    include AppGeneratorHelpers
+    include MigrationHelpers
+
+    source_root(template_base('component/migration'))
+
+    desc 'Generate a new database migration.'
+
+    class_option_for :orm
+
+    class_option :model,
+      :type => :boolean,
+      :desc => 'Specify this option to generate a migration which creates a table for the provided model'
+
+    argument :name,
+      :required => true
+
+    argument :attributes,
+      :type => :hash,
+      :default => {}
 
   end
 end

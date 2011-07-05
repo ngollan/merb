@@ -2,9 +2,9 @@
 
 module Merb
   module Generators
-    class MerbCoreGenerator < AppGenerator
+    class MerbCore < AppGenerator
 
-      source_paths << template_base('application/merb_very_flat')
+      source_paths << template_base('application/merb_core')
 
       app_class_options
 
@@ -14,7 +14,7 @@ module Merb
       DESC
 
       def create_application
-        empty_directory :lib_tasks, 'lib/tasks'
+        empty_directory 'lib/tasks'
 
         directory 'app'
         directory 'autotest'

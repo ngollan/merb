@@ -21,8 +21,15 @@ module Merb::Generators
       :desc => "space separated model properties in form of name:type. Example: state:string"
 
     def create_model
-      directory 'app'
-      directory (testing_framework == :rspec ? "spec" : "test")
+      template 'app/models/%file_name%.rb.tt', File.join("app/models", base_path, "#{file_name}.rb")
+
+      case testing_framework
+      when :rspec
+        template 'spec/models/%file_name%_spec.rb.tt', File.join("spec/models", base_path, "#{file_name}_spec.rb")
+
+      when :test_unit
+        template 'test/models/%file_name%_test.rb', File.join("test/models", base_path, "#{file_name}_test.rb")
+      end
     end
 
     protected

@@ -4,19 +4,11 @@ describe Merb::Generators::MerbStack do
 
   describe "templates" do
 
-    def app_path(*frags)
-      File.join('/tmp', @app_name, *frags)
-    end
-
     before :all do
-      @app_name = "testing#{Process.pid}"
-      @generator = Merb::Generators::MerbStack.new([@app_name], {}, {:destination_root => app_path})
+      @generator = create_generator(Merb::Generators::MerbStack, 'MerbStackSpec')
     end
 
-    after :all do
-      raise "Not going to remove: #{app_path}" unless app_path.match?(/\A\/tmp\/testing\d+/)
-      FileUtils.rm_r(app_path)
-    end
+    after_generator_spec
 
     it_should_behave_like "named generator"
     it_should_behave_like "app generator"
@@ -25,22 +17,14 @@ describe Merb::Generators::MerbStack do
       @generator.destination_root.should == app_path
     end
 
-    it "should create the application" do
-      lambda do
-        @generator.invoke_all
-      end.should_not raise_error
-    end
+    it_should_generate
 
     describe "File creation" do
-      [
+      it_should_create(
         'Gemfile', 'bin/merb', 'config.ru', 'config/init.rb',
         'config/database.yml', 'app/controllers/application.rb',
         'app/controllers/exceptions.rb', '.gitignore'
-      ].each do |fname|
-        it "should create #{fname}" do
-          File.exist?(app_path(fname)).should be_true
-        end
-      end
+      )
 
       it "should create a number of views"
 

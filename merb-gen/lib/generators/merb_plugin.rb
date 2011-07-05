@@ -14,7 +14,7 @@ module Merb::Generators
       droot = _config[:destination_root] || Dir.pwd
 
       #TODO: does this work? base_name might be uninitialised
-      _config.merge({:destination_root => File.join(droot, base_name)})
+      _config.merge({:destination_root => File.join(droot, base_name(_args[0]))})
 
       super(_args, _options, _config)
     end

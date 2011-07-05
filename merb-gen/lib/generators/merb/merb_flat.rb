@@ -6,6 +6,8 @@ module Merb
 
       source_paths << template_base('application/merb_flat')
 
+      app_class_options
+
       def create_application
         copy_file 'README.txt'
 

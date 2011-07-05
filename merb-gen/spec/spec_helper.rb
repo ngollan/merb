@@ -13,37 +13,82 @@ require 'rspec'
 
 Merb.disable(:initfile)
 
+require 'tmpdir'
+
 module Merb
   module Test
-    module RSpecMatchers
-      class ThorCreateMatcher
-        def initialize(expected)
-          @expected = expected
-        end
+    module AppGenerationHelpers
 
-        def matches?(actual)
-          @actual = actual
-          @actual.class.all_tasks.select {|t| t.respond_to? :destination}.map {|t| t.destination }.include?(@expected)
-        end
+      def app_path(*frags)
+        File.join(@app_base_dir, *frags)
+      end
 
-        def failure_message
-          "expected #{@actual.inspect} to create #{@expected.inspect}, but it didn't"
-        end
+      def app_name
+        @app_name
+      end
 
-        def negative_failure_message
-          "expected #{@actual.inspect} not to create #{@expected.inspect}, but it did"
+      def temp_app_name
+        "Temp#{Process.pid}"
+      end
+
+      # Build generator writing to temporary path.
+      #
+      # You can pass a `:config` key in options which will be used as the
+      # `config` parameter to the Generator.
+      def create_generator(klass, name, options={})
+        raise "Will not create a new generator, already using one with temp dir #{@app_spec_base_dir}" unless @app_spec_base_dir.nil?
+
+        dir = Dir.mktmpdir
+
+        @app_name = name
+        @app_spec_base_dir = dir
+        @app_base_dir = File.join(@app_spec_base_dir, @app_name)
+
+        config = options.delete(:config) || {}
+        klass.new([name], config, {:destination_root => @app_base_dir}.merge(options))
+      end
+
+      def after_generator_spec(_when = :all)
+        after _when do
+          #STDERR.puts "Removing temp dir: #{@app_spec_base_dir}"
+          FileUtils.remove_entry_secure @app_spec_base_dir unless @app_spec_base_dir.nil?
+          @app_spec_base_dir = nil
         end
       end
 
-      def create(expected)
-        ThorCreateMatcher.new(expected)
+      # Call before specs depending on generated content.
+      #
+      # Runs the generator to a temporary directory, creating all files.
+      def it_should_generate(_which = nil)
+        it "should create the application" do
+          lambda do
+            if _which.nil?
+              @generator.invoke_all
+            else
+              @generator.invoke _which
+            end
+          end.should_not raise_error
+        end
       end
+
+      # Check file generation.
+      #
+      # @param [String*] files Paths to check for existence. Relative to the
+      #   generator root.
+      def it_should_create(*files)
+        files.each do |fname|
+          it "should create #{fname}" do
+            File.exist?(app_path(fname)).should be_true
+          end
+        end
+      end
+
     end
   end
 end
 
 RSpec.configure do |config|
-  include Merb::Test::RSpecMatchers
+  include Merb::Test::AppGenerationHelpers
 end
 
 shared_examples_for "app generator" do
