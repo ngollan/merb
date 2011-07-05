@@ -134,15 +134,15 @@ module Merb::Generators
     end
 
     def template_engine
-      options[:template_engine].intern
+      options[:template_engine].to_sym
     end
 
     def testing_framework
-      options[:testing_framework].intern
+      options[:testing_framework].to_sym
     end
 
     def orm
-      options[:orm].intern
+      options[:orm].to_sym
     end
 
     module ClassMethods
