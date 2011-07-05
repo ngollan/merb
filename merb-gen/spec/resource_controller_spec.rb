@@ -66,6 +66,10 @@ describe Merb::Generators::ResourceController do
       @generator = create_generator(Merb::Generators::ResourceController, 'John::Monkey::Stuff')
     end
 
+    after_generator_spec
+
+    it_should_generate
+
     describe 'controller generation' do
       it_should_create 'app/controllers/john/monkey/stuff.rb'
     end

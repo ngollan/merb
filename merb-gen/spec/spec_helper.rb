@@ -40,12 +40,12 @@ module Merb
 
         dir = Dir.mktmpdir
 
-        @app_name = name
+        @app_name = name.is_a?(Array) ? name.first : name
         @app_spec_base_dir = dir
         @app_base_dir = File.join(@app_spec_base_dir, @app_name)
 
         config = options.delete(:config) || {}
-        klass.new([name], config, {:destination_root => @app_base_dir}.merge(options))
+        klass.new(name.is_a?(Array) ? name : [name], config, {:destination_root => @app_base_dir}.merge(options))
       end
 
       def after_generator_spec(_when = :all)
@@ -61,13 +61,13 @@ module Merb
       # Runs the generator to a temporary directory, creating all files.
       def it_should_generate(_which = nil)
         it "should create the application" do
-          lambda do
+          #lambda do
             if _which.nil?
               @generator.invoke_all
             else
               @generator.invoke _which
             end
-          end.should_not raise_error
+          #end.should_not raise_error
         end
       end
 

@@ -28,6 +28,10 @@ module Merb
         File.join(*snake_cased_chunks[0..-2])
       end
 
+      def base_path_with_name
+        File.join(base_path, file_name)
+      end
+
       protected
 
       def snake_cased_chunks

@@ -20,10 +20,10 @@ module Merb::Generators
     class_option_for :orm
 
     def create_resource
-      invoke Model, model_name
-      invoke ResourceController, controller_name
+      invoke Model, model_name, attributes
+      invoke ResourceController, controller_name, attributes
 
-      STDOUT << message("resources :#{model_name.pluralize.underscore} route added to config/router.rb")
+      shell.say "resources :#{model_name.pluralize.underscore} route added to config/router.rb"
     end
 
     protected
