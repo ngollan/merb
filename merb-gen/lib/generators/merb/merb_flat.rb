@@ -2,32 +2,26 @@
 
 module Merb
   module Generators
-    class MerbFlat < AppGenerator
+    module App
+      class Flat < AppGenerator
 
-      source_paths << template_base('application/merb_flat')
+        source_paths << template_base('application/merb_flat')
 
-      app_class_options
+        app_class_options
 
-      def create_application
-        copy_file 'README.txt'
+        register
 
-        template 'application.rbt', 'application.rb'
+        def create_application
+          copy_file 'README.txt'
 
-        directory 'config'
-        directory 'views'
-        directory (testing_framework == :rspec ? "spec" : "test")
+          template 'application.rbt', 'application.rb'
+
+          directory 'config'
+          directory 'views'
+          directory (testing_framework == :rspec ? "spec" : "test")
+        end
+
       end
-
     end
   end
 end
-
-
-
-
-
-
-
-
-
-

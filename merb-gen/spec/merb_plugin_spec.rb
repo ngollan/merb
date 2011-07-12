@@ -1,12 +1,12 @@
 require 'spec_helper'
 
-describe Merb::Generators::MerbPlugin do
+describe Merb::Generators::Dev::Plugin do
 
   describe 'without the "bin" option' do
     describe "templates" do
 
       before :all do
-        @generator = create_generator(Merb::Generators::MerbPlugin, 'MerbPlugin')
+        @generator = create_generator(Merb::Generators::Dev::Plugin, 'MerbPlugin')
       end
 
       after_generator_spec
@@ -28,7 +28,7 @@ describe Merb::Generators::MerbPlugin do
     describe "templates" do
 
       before :all do
-        @generator = create_generator(Merb::Generators::MerbPlugin, 'CoolMerbPlugin', {:config => {:bin => true}})
+        @generator = create_generator(Merb::Generators::Dev::Plugin, 'CoolMerbPlugin', {:config => {:bin => true}})
       end
 
       after_generator_spec

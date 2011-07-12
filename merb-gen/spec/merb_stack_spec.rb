@@ -1,11 +1,11 @@
 require 'spec_helper'
 
-describe Merb::Generators::MerbStack do
+describe Merb::Generators::App::Stack do
 
   describe "templates" do
 
     before :all do
-      @generator = create_generator(Merb::Generators::MerbStack, 'MerbStackSpec')
+      @generator = create_generator(Merb::Generators::App::Stack, 'MerbStackSpec')
     end
 
     after_generator_spec

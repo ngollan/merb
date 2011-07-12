@@ -2,23 +2,27 @@
 
 module Merb
   module Generators
-    class MerbVeryFlat < AppGenerator
+    module App
+      class VeryFlat < AppGenerator
 
-      source_paths << template_base('application/merb_very_flat')
+        source_paths << template_base('application/merb_very_flat')
 
-      app_class_options
+        app_class_options
 
-      desc <<-DESC
+        register
+
+        desc <<-DESC
       Generates a new very flat Merb application: the whole application
       in one file, similar to Sinatra or Camping.
-      DESC
+        DESC
 
-      def create_application
-        template 'application.rbt', "#{base_name}.rb"
+        def create_application
+          template 'application.rbt', "#{base_name}.rb"
 
-        directory (testing_framework == :rspec ? "spec" : "test")
+          directory (testing_framework == :rspec ? "spec" : "test")
+        end
+
       end
-
     end
   end
 end

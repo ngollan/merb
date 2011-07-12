@@ -1,5 +1,78 @@
 #!/usr/bin/env ruby
 
+lib = File.expand_path('../../../merb-core/lib', __FILE__)
+$LOAD_PATH.unshift(lib) if File.directory?(lib)
+
+lib = File.expand_path('../../lib', __FILE__)
+$LOAD_PATH.unshift(lib) if File.directory?(lib)
+
+require 'rubygems'
+require 'bundler/setup'
+
 require 'merb-gen'
 
-Merb::Generators.run_cli(Dir.pwd, 'merb-gen', Merb::VERSION, ARGV)
+DEFAULT_NAMESPACE = 'app'
+GENERATOR_SCOPE = 'merb-gen'.freeze
+GENERATOR_FILENAME = 'Generators'.freeze
+
+module Merb::Generators
+  # Binding to run external Generator files in.
+  #
+  # The main purpose here is to provide the "top-level" #scope method in
+  # a somewhat flexible and non-polluting way.
+  class GenfileScope
+    def self.new_binding(name = ::GENERATOR_SCOPE)
+      s = self.new(name)
+      s.get_binding
+    end
+
+    def scope(name, &block)
+      block.call if name == @name
+    end
+
+    def get_binding
+      binding
+    end
+
+    private
+
+    def initialize(name)
+      @name = name
+      @name.freeze
+    end
+  end
+end
+
+# find other gems with Generator files
+begin
+
+  Gem.source_index.latest_specs.map(&:full_gem_path)
+  ['/tmp/blah-generator'].inject([]) do |files, gem_path|
+    search_path = File.join(gem_path, GENERATOR_FILENAME)
+    files << search_path if File.exist?(search_path)
+    files
+  end.each do |gen_path|
+    eval File.read(gen_path), Merb::Generators::GenfileScope.new_binding, gen_path, 1
+  end
+
+rescue Exception => ex
+
+  STDERR.puts "Failed to import generator descriptions from installed gems: #{ex.message} (#{ex.class})"
+
+end
+
+task = ARGV.shift
+
+if task.nil? || ['-T', '--list'].include?(task)
+  #TODO: nicer output (short description of each task)
+  Merb::Generators.generators.each do |name, klass|
+    puts name
+  end
+else
+  klass = Merb::Generators.generators[task] || Merb::Generators.generators["#{DEFAULT_NAMESPACE}:#{task}"]
+
+  raise "No such task (#{task})" if klass.nil?
+
+  #TODO: call the actual task, let it figure out the details
+  klass.help(Thor::Base.shell.new)
+end
