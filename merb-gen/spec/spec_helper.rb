@@ -50,7 +50,6 @@ module Merb
 
       def after_generator_spec(_when = :all)
         after _when do
-          #STDERR.puts "Removing temp dir: #{@app_spec_base_dir}"
           FileUtils.remove_entry_secure @app_spec_base_dir unless @app_spec_base_dir.nil?
           @app_spec_base_dir = nil
         end
@@ -61,13 +60,13 @@ module Merb
       # Runs the generator to a temporary directory, creating all files.
       def it_should_generate(_which = nil)
         it "should create the application" do
-          #lambda do
+          lambda do
             if _which.nil?
               @generator.invoke_all
             else
               @generator.invoke _which
             end
-          #end.should_not raise_error
+          end.should_not raise_error
         end
       end
 

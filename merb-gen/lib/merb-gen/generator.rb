@@ -25,6 +25,9 @@ module Merb
 
     # Get a list of registered generators.
     #
+    # @return [Hash(String => Class), #names] A hash resolving registry names
+    #   to classes with the #keys method aliased to #names.
+    #
     # @api plugin
     def self.generators(namespace = '')
       if namespace.empty?
@@ -65,11 +68,24 @@ module Merb
 
         # @api private
         def generators
-          @@generators ||= {}
+          @@generators ||= {}.instance_eval do
+            alias :names :keys
+            self
+          end
         end
 
         def _itself
           self
+        end
+
+        # @api private
+        attr_accessor :register_name
+
+        # @note Defaults to `self.namespace` to keep compatibility with
+        #   {#self_task} in unregistered tasks.
+        # @api private
+        def register_name
+          @register_name || self.namespace
         end
 
         # Register a generator for public use.
@@ -83,6 +99,9 @@ module Merb
         #   using all modules under Merb::Generators as components.
         # @param [#to_s] name The generator name. If none is given, a name
         #   is generated froom the class name.
+        #
+        # @raise [ArgumentError] when trying to register a task with a name
+        #   that's already in use.
         #
         # @example
         #    module Merb::Generators
@@ -105,12 +124,19 @@ module Merb
             end
           end
 
-          register_name = name || register_path.last
-          register_name = "#{namespace.to_s.strip}:#{register_name.to_s.strip}"
+          reg_name = name || register_path.last
+          reg_name = "#{namespace.to_s.strip}:#{reg_name.to_s.strip}"
 
-          raise "Generator #{register_name} already exists (class: #{self.generators[register_name]})" if self.generators.has_key?(register_name)
+          raise ArgumentError.new("Generator #{reg_name} already exists, class: #{self.generators[reg_name]}") if self.generators.has_key?(reg_name)
 
-          self.generators[register_name] = _itself
+          self.generators[reg_name] = _itself
+          _itself.register_name = reg_name
+        end
+
+        # @note Overrides the method from Thor::Group
+        # @api plugin
+        def self_task
+          Thor::DynamicTask.new(register_name, class_options)
         end
       end
 

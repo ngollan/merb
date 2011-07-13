@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+#TODO: remove for production
 lib = File.expand_path('../../../merb-core/lib', __FILE__)
 $LOAD_PATH.unshift(lib) if File.directory?(lib)
 
@@ -8,6 +9,7 @@ $LOAD_PATH.unshift(lib) if File.directory?(lib)
 
 require 'rubygems'
 require 'bundler/setup'
+#END TODO
 
 require 'merb-gen'
 
@@ -43,36 +45,82 @@ module Merb::Generators
   end
 end
 
+$shell = Thor::Base.shell.new
+
 # find other gems with Generator files
 begin
-
-  Gem.source_index.latest_specs.map(&:full_gem_path)
-  ['/tmp/blah-generator'].inject([]) do |files, gem_path|
+  Gem.source_index.latest_specs.map(&:full_gem_path).inject([]) do |files, gem_path|
     search_path = File.join(gem_path, GENERATOR_FILENAME)
     files << search_path if File.exist?(search_path)
     files
   end.each do |gen_path|
-    eval File.read(gen_path), Merb::Generators::GenfileScope.new_binding, gen_path, 1
+    begin
+      eval File.read(gen_path), Merb::Generators::GenfileScope.new_binding, gen_path, 1
+    rescue Exception => ex
+      $shell.say(
+        "Failed to import generator description from #{gen_path}: #{ex.message} (#{ex.class})",
+        :yellow
+      )
+    end
   end
-
 rescue Exception => ex
+  $shell.say(
+    "Failed to import generator descriptions from installed gems: #{ex.message} (#{ex.class})",
+    :yellow
+  )
 
-  STDERR.puts "Failed to import generator descriptions from installed gems: #{ex.message} (#{ex.class})"
-
+  raise
 end
 
 task = ARGV.shift
+argsplit_idx = ARGV.index('--')
+generator_args = argsplit_idx.nil? ? [] : ARGV.slice!((argsplit_idx)..-1)[1..-1]
 
 if task.nil? || ['-T', '--list'].include?(task)
-  #TODO: nicer output (short description of each task)
-  Merb::Generators.generators.each do |name, klass|
-    puts name
-  end
+  $shell.say "Available tasks:", :bold
+
+  $shell.print_table(
+    Merb::Generators.generators.map {|name, klass|
+      [name, klass.desc.each_line.map(&:strip).join(' ')]
+    }.sort {|a, b|
+      a.first <=> b.first
+    }.map {|row|
+      name, klass = row
+
+      name = if name =~ /\A(#{DEFAULT_NAMESPACE}:)(.+)/
+               "#{$1}#{$shell.set_color($2, :bold)}"
+             else
+               $shell.set_color(name, :bold)
+             end
+
+      [name, klass]
+    },
+    :ident => 2
+  )
+
+  $shell.say "#{$/}The default namespace is \"#{DEFAULT_NAMESPACE}\".#{$/ * 2}" <<
+             "Configuration options (separate from generator options with '--'):"
+
+  $shell.print_table(
+    [
+      ['--no-merb-load', 'Do not attempt to boot the merb stack in the current working directory.']
+    ],
+    :ident => 2
+  )
+
+  exit
 else
-  klass = Merb::Generators.generators[task] || Merb::Generators.generators["#{DEFAULT_NAMESPACE}:#{task}"]
+  begin
+    klass = Merb::Generators.generators[task] || Merb::Generators.generators["#{DEFAULT_NAMESPACE}:#{task}"]
 
-  raise "No such task (#{task})" if klass.nil?
+    raise "No such task: #{task}" if klass.nil?
 
-  #TODO: call the actual task, let it figure out the details
-  klass.help(Thor::Base.shell.new)
+    config = {:shell => $shell}
+    config.merge!({:no_merb_load => true}) if generator_args.include?('--no-merb-load')
+
+    klass.start(ARGV, config)
+  rescue Exception => ex
+    $shell.say "#{$shell.set_color('Error:', :red, true)} #{ex.message} (#{ex.class})"
+    raise if $DEBUG
+  end
 end
