@@ -17,6 +17,42 @@ require 'tmpdir'
 
 module Merb
   module Test
+    class SpecThorShell < Thor::Shell::Basic
+      Answers = {}
+
+      def initialize(answers = {})
+        Answers.merge!(answers)
+      end
+
+      # Map questions to entries in Answers.
+      #
+      # This covers #yes? and #no?
+      def ask(statement, color=nil)
+        raise ArgumentError.new("Expected a stored answer for statement #{statement.inspect}") unless Answers.has_key?(statement)
+        Answers[statement]
+      end
+
+      def error(statement)
+      end
+
+      # Always overwrite files.
+      def file_collision(destination)
+        true
+      end
+
+      def print_table(*args)
+      end
+
+      def print_wrapped(*args)
+      end
+
+      def say(*args)
+      end
+
+      def say_status(*args)
+      end
+    end
+
     module AppGenerationHelpers
 
       def app_path(*frags)
@@ -34,7 +70,11 @@ module Merb
       # Build generator writing to temporary path.
       #
       # You can pass a `:config` key in options which will be used as the
-      # `config` parameter to the Generator.
+      # `config` parameter to the Generator. By default, created generators
+      # will use a SpecThorShell instance which mutes all output and does
+      # not reply to questions. If you need to test a generator which
+      # depends on user input, pass an instance with the proper answers
+      # as the `:shell` option.
       def create_generator(klass, name, options={})
         raise "Will not create a new generator, already using one with temp dir #{@app_spec_base_dir}" unless @app_spec_base_dir.nil?
 
@@ -45,6 +85,8 @@ module Merb
         @app_base_dir = File.join(@app_spec_base_dir, @app_name)
 
         config = options.delete(:config) || {}
+        options[:shell] ||= SpecThorShell.new
+
         klass.new(name.is_a?(Array) ? name : [name], config, {:destination_root => @app_base_dir}.merge(options))
       end
 
