@@ -38,8 +38,8 @@ module Merb::Generators
   end
 
   module NamedGeneratorHelpers
-    def class_name
-      name.gsub('-', '_').camelize
+    def class_name(_name = name)
+      _name.gsub('-', '_').camelize
     end
 
     alias_method :module_name, :class_name

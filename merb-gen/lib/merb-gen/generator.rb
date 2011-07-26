@@ -161,9 +161,13 @@ module Merb
           Merb::BootLoader::BuildFramework.run
           Merb::BootLoader::Dependencies.run
 
-          _options.merge({:orm => Merb.orm}) if Merb.orm
-          _options.merge({:template_engine => Merb.template_engine}) if Merb.template_engine
-          _options.merge({:testing_framework => Merb.test_framework}) if Merb.test_framework
+          task_options = _options.delete(:task_options) || {}
+
+          task_options.merge({:orm => Merb.orm}) if Merb.orm
+          task_options.merge({:template_engine => Merb.template_engine}) if Merb.template_engine
+          task_options.merge({:testing_framework => Merb.test_framework}) if Merb.test_framework
+
+          _config[:task_options] = task_options
         end
 
         super(_args, _options, _config)
