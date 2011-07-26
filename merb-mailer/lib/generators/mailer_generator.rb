@@ -1,22 +1,20 @@
 module Merb::Generators
-  module Mailer
-    class MailerGenerator < NamespacedGenerator
+  class Mailer < NamespacedGenerator
 
-      include AppGeneratorHelpers
+    include AppGeneratorHelpers
 
-      source_paths << File.join(File.dirname(__FILE__), 'templates', 'mailer')
+    source_paths << File.join(File.dirname(__FILE__), 'templates', 'mailer')
 
-      desc 'Create a mailer'
+    desc 'Create a mailer'
 
-      class_option_for :testing_framework
+    class_option_for :testing_framework
 
-      register
+    register
 
-      def create_mailer
-        directory 'app'
-        directory 'spec' if options[:testing_framework] == :rspec
-      end
-
+    def create_mailer
+      directory 'app'
+      directory 'spec' if options[:testing_framework] == :rspec
     end
+
   end
 end
