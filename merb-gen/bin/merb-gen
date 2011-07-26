@@ -103,7 +103,7 @@ if task.nil? || ['-T', '--list'].include?(task)
 
   $shell.print_table(
     [
-      ['--no-merb-load', 'Do not attempt to boot the merb stack in the current working directory.']
+      ['--no-boot', 'Do not attempt to boot the merb stack in the current working directory.']
     ],
     :ident => 2
   )
@@ -116,7 +116,7 @@ else
     raise "No such task: #{task}" if klass.nil?
 
     config = {:shell => $shell}
-    config.merge!({:no_merb_load => true}) if generator_args.include?('--no-merb-load')
+    config.merge!({:no_merb_load => true}) if generator_args.include?('--no-boot')
 
     klass.start(ARGV, config)
   rescue Exception => ex
