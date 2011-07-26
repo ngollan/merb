@@ -49,9 +49,20 @@ $shell = Thor::Base.shell.new
 
 # find other gems with Generator files
 begin
-  Gem.source_index.latest_specs.map(&:full_gem_path).inject([]) do |files, gem_path|
+  Gem.source_index.latest_specs(true).map(&:full_gem_path).inject([]) do |files, gem_path|
     search_path = File.join(gem_path, GENERATOR_FILENAME)
-    files << search_path if File.exist?(search_path)
+
+    result_string = $shell.set_color('No', :red)
+    if File.exist?(search_path)
+      files << search_path
+      result_string = $shell.set_color('Yes', :green)
+    end
+
+    $shell.say(
+      "#{$shell.set_color('Searching path:', :bold)} #{search_path} #{result_string}",
+      :yellow
+    ) if $DEBUG
+
     files
   end.each do |gen_path|
     begin
